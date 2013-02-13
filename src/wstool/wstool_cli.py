@@ -58,7 +58,8 @@ from rosinstall.helpers import ROSINSTALL_FILENAME, \
 from rosinstall.multiproject_cli import MultiprojectCLI, \
     __MULTIPRO_CMD_DICT__, __MULTIPRO_CMD_ALIASES__, \
     __MULTIPRO_CMD_HELP_LIST__, IndentedHelpFormatterWithNL, \
-    list_usage
+    list_usage, get_header
+import rosinstall.multiproject_cmd as multiproject_cmd
 
 ## This file adds or extends commands from multiproject_cli where ROS
 ## specific output has to be generated.
@@ -75,6 +76,8 @@ class WstoolCLI(MultiprojectCLI):
             config_generator=rosinstall.multiproject_cmd.cmd_persist_config)
 
     def cmd_info(self, target_path, argv, reverse=True, config=None):
+        # similar to multiproject_cli except it has no ros-pkg-path
+        # options, and "other" elements are not shown
         only_option_valid_attrs = ['path', 'localname', 'version', 'revision', 'cur_revision', 'uri', 'cur_uri', 'scmtype']
         parser = OptionParser(usage="usage: %s info [localname]* [OPTIONS]" % self.progname,
                               formatter=IndentedHelpFormatterWithNL(),
@@ -92,9 +95,7 @@ URL of the repo.
 
 If status is V, the difference between what was specified and what is
 real is shown in the respective column. For SVN entries, the url is
-split up according to standard layout (trunk/tags/branches).  The
-ROS_PACKAGE_PATH follows the order of the table, earlier entries
-overlay later entries.
+split up according to standard layout (trunk/tags/branches).
 
 When given one localname, just show the data of one element in list form.
 This also has the generic properties element which is usually empty.
@@ -110,12 +111,6 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
                               epilog="See: http://www.ros.org/wiki/rosinstall for details\n")
         parser.add_option("--data-only", dest="data_only", default=False,
                           help="Does not provide explanations",
-                          action="store_true")
-        parser.add_option("--no-pkg-path", dest="no_pkg_path", default=False,
-                          help="Suppress ROS_PACKAGE_PATH.",
-                          action="store_true")
-        parser.add_option("--pkg-path-only", dest="pkg_path_only", default=False,
-                          help="Shows only ROS_PACKAGE_PATH separated by ':'. Supercedes all other options.",
                           action="store_true")
         parser.add_option("--only", dest="only", default=False,
                           help="Shows comma-separated lists of only given comma-separated attribute(s).",
@@ -140,9 +135,6 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
         if args == []:
             args = None
         # relevant for code completion, so these should yield quick response:
-        if options.pkg_path_only:
-            print(":".join(get_ros_package_path(config)))
-            return 0
         elif options.only:
             only_options = options.only.split(",")
             if only_options == '':
@@ -156,10 +148,7 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
                     lookup_required = True
             elements = select_elements(config, args)
             for element in elements:
-                if lookup_required and element.is_vcs_element():
-                    spec = element.get_versioned_path_spec()
-                else:
-                    spec = element.get_path_spec()
+                spec = element.get_versioned_path_spec()
                 output = []
                 for attr in only_options:
                     if 'localname' == attr:
@@ -193,16 +182,16 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
                                 options.data_only))
             return 0
 
-        header = 'workspace: %s\nROS_ROOT: %s' % (target_path,
-                                                  get_ros_stack_path(config))
+        header = 'workspace: %s' % (target_path)
         print(header)
-        if not options.no_pkg_path:
-            table = get_info_table(config.get_base_path(),
-                                   outputs,
-                                   options.data_only,
-                                   reverse=reverse)
-            if table is not None and table != '':
-                print("\n%s" % table)
+        table = get_info_table(config.get_base_path(),
+                               outputs,
+                               options.data_only,
+                               reverse=reverse)
+        if table is not None and table != '':
+           print("\n%s" % table)
+
+        return 0
 
         return 0
 
