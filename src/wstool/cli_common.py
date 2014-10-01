@@ -128,6 +128,9 @@ def _get_status_flags(basepath, elt_dict):
     :param elt_dict: a dict representing one elt_dict in a table
     :returns: str
     """
+    if 'properties' in elt_dict and type(elt_dict['properties']) is dict:
+        if elt_dict['properties'].get('unmanaged', False):
+            return '!'
     if 'exists' in elt_dict and elt_dict['exists'] is False:
         return 'x'
     mflag = ''
@@ -175,7 +178,6 @@ def get_info_table_elements(basepath, entries):
                 line['actualversion'] = line['actualversion'][0:12]
 
         if line['scm'] is not None:
-
             if line['scm'] == 'svn':
                 # in case of SVN, we can use the final part of
                 # standard uri as version

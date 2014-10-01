@@ -48,11 +48,13 @@ import os
 from wstool.common import MultiProjectException, DistributedWork, \
     select_elements, normabspath
 from wstool.config import Config, realpath_relation
+from wstool.config_elements import AVCSConfigElement
 from wstool.config_yaml import aggregate_from_uris, generate_config_yaml, \
     get_path_specs_from_uri, PathSpec
 
 import vcstools
 import vcstools.__version__
+from vcstools.vcs_abstraction import get_vcs_client
 
 
 def get_config(basepath,
@@ -378,7 +380,7 @@ def cmd_snapshot(config, localnames=None):
     return source_aggregate
 
 
-def cmd_info(config, localnames=None, untracked=False):
+def cmd_info(config, localnames=None, untracked=False, unmanaged=True):
     """This function compares what should be (config_file) with what is
     (directories) and returns a list of dictionary giving each local
     path and all the state information about it available.
@@ -441,6 +443,18 @@ def cmd_info(config, localnames=None, untracked=False):
                     'actualversion': actualversion,
                     'modified': modified,
                     'properties': self.element.get_properties()}
+
+    class UnmanagedInfoRetriever(InfoRetriever):
+
+        def __init__(self, path, localname, scm_type, untracked):
+            self.path = path
+            self.localname = localname
+            self.scm_type = scm_type
+            self.untracked = untracked
+            vcsc = get_vcs_client(self.scm_type, os.path.join(self.path, self.localname))
+            self.element = AVCSConfigElement(scm_type, os.path.join(self.path, self.localname), localname, vcsc.get_url())
+            self.element.properties = {'unmanaged':True}
+
     path = config.get_base_path()
     # call SCM info in separate threads
     elements = config.get_config_elements()
@@ -450,4 +464,29 @@ def cmd_info(config, localnames=None, untracked=False):
         if element.get_properties() is None or not 'setup-file' in element.get_properties():
             work.add_thread(InfoRetriever(element, path, untracked))
     outputs = work.run()
+
+    # look for any repositories which are not currently part of the config
+    if unmanaged:
+        managed_paths = [os.path.join(path, e.get_local_name()) for e in elements]
+        unmanaged_paths = []
+        scm_markers = {'.svn':'svn', '.git':'git', '.hg':'hg', '.bzr':'bzr'}
+        for root, dirs, files in os.walk(path):
+            #print('checking %s...' % root)
+            if root in managed_paths:
+                # remove it from the walk if it's managed
+                del dirs[:]
+            else:
+                # iterate over the directory contents looking for a vcs dir
+                for i,d in enumerate(dirs):
+                    # check if it's a vcs dir
+                    if d in scm_markers:
+                        # add it to the unmanaged list 
+                        unmanaged_paths.append((os.path.relpath(root, path), scm_markers[d]))
+                        # don't walk any other directories in this root
+                        del dirs[:]
+        work = DistributedWork(len(unmanaged_paths))
+        for localname, scm_type in sorted(unmanaged_paths, key=lambda up: up[0], reverse=False):
+            work.add_thread(UnmanagedInfoRetriever(path, localname, scm_type, untracked))
+        outputs = work.run() + outputs
+    
     return outputs

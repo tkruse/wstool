@@ -979,6 +979,7 @@ The command removes entries from your configuration file, it does not affect you
             description=__MULTIPRO_CMD_DICT__["info"] + """
 
 The Status (S) column shows
+ !  for not listed in the config file
  x  for missing
  L  for uncommited (local) changes
  V  for difference in version and/or remote URI
@@ -1026,6 +1027,10 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
             "-t", "--target-workspace", dest="workspace", default=None,
             help="which workspace to use",
             action="store")
+        parser.add_option(
+            "-m", "--managed-only", dest="unmanaged", default=True,
+            help="only show managed elements",
+            action="store_false")
         (options, args) = parser.parse_args(argv)
 
         if config is None:
@@ -1058,7 +1063,8 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
         # this call takes long, as it invokes scms.
         outputs = multiproject_cmd.cmd_info(config,
                                             localnames=args,
-                                            untracked=options.untracked)
+                                            untracked=options.untracked,
+                                            unmanaged=options.unmanaged)
         if args and len(args) == 1:
             # if only one element selected, print just one line
             print(get_info_list(config.get_base_path(),
