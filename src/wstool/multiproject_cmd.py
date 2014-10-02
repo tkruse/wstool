@@ -55,6 +55,10 @@ from wstool.config_yaml import aggregate_from_uris, generate_config_yaml, \
 import vcstools
 import vcstools.__version__
 from vcstools.vcs_abstraction import get_vcs_client
+from vcstools.git import GitClient
+from vcstools.hg  import HgClient
+from vcstools.bzr import BzrClient
+from vcstools.svn import SvnClient
 
 
 def get_config(basepath,
@@ -469,19 +473,17 @@ def cmd_info(config, localnames=None, untracked=False, unmanaged=True):
     if unmanaged:
         managed_paths = [os.path.join(path, e.get_local_name()) for e in elements]
         unmanaged_paths = []
-        scm_markers = {'.svn':'svn', '.git':'git', '.hg':'hg', '.bzr':'bzr'}
+        scm_clients = {SvnClient: 'svn', GitClient: 'git', BzrClient:'bzr', HgClient:'hg'}
         for root, dirs, files in os.walk(path):
-            #print('checking %s...' % root)
             if root in managed_paths:
                 # remove it from the walk if it's managed
                 del dirs[:]
             else:
-                # iterate over the directory contents looking for a vcs dir
-                for i,d in enumerate(dirs):
+                for client, key in scm_clients.items():
                     # check if it's a vcs dir
-                    if d in scm_markers:
+                    if client.static_detect_presence(root):
                         # add it to the unmanaged list 
-                        unmanaged_paths.append((os.path.relpath(root, path), scm_markers[d]))
+                        unmanaged_paths.append((os.path.relpath(root, path), key))
                         # don't walk any other directories in this root
                         del dirs[:]
         work = DistributedWork(len(unmanaged_paths))
