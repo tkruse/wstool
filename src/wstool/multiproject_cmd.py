@@ -485,7 +485,7 @@ def cmd_info(config, localnames=None, untracked=False, unmanaged=True):
                         # don't walk any other directories in this root
                         del dirs[:]
         work = DistributedWork(len(unmanaged_paths))
-        for localname, scm_type in sorted(unmanaged_paths, key=lambda up: up[0], reverse=False):
+        for localname, scm_type in sorted(unmanaged_paths, key=lambda up: up[0], reverse=True):
             work.add_thread(UnmanagedInfoRetriever(path, localname, scm_type, untracked))
         outputs = work.run() + outputs
     
