@@ -128,9 +128,6 @@ def _get_status_flags(basepath, elt_dict):
     :param elt_dict: a dict representing one elt_dict in a table
     :returns: str
     """
-    if 'properties' in elt_dict and type(elt_dict['properties']) is dict:
-        if elt_dict['properties'].get('unmanaged', False):
-            return '!'
     if 'exists' in elt_dict and elt_dict['exists'] is False:
         return 'x'
     mflag = ''
@@ -146,7 +143,7 @@ def _get_status_flags(basepath, elt_dict):
     return mflag
 
 
-def get_info_table_elements(basepath, entries):
+def get_info_table_elements(basepath, entries, unmanaged=False):
     """returns a list of dict with refined information from entries"""
 
     outputs = []
@@ -161,7 +158,7 @@ def get_info_table_elements(basepath, entries):
             line['curr_version'] = None
         if not 'version' in line:
             line['version'] = None
-        output_dict = {'scm': line['scm'],
+        output_dict = {'scm': '--' + line['scm'] if unmanaged else line['scm'],
                        'uri': line['uri'],
                        'curr_uri': None,
                        'version': line['version'],
@@ -246,26 +243,37 @@ def get_info_table_elements(basepath, entries):
     return outputs
 
 
-def get_info_table(basepath, entries, data_only=False, reverse=False):
+def get_info_table(basepath, entries, data_only=False, reverse=False, unmanaged=False):
     """
     return a refined textual representation of the entries. Provides
     column headers and processes data.
     """
-    headers = {
-        'uri': "URI  (Spec) [http(s)://...]",
-        'scm': "SCM ",
-        'localname': "Localname",
-        'version': "Version-Spec",
-        'matching': "UID  (Spec)",
-        'status': "S"}
+    if unmanaged:
+        headers = {
+            'uri': "URI [http(s)://...]",
+            'scm': "SCM ",
+            'localname': "Localname"}
 
-    # table design
-    selected_headers = ['localname', 'status', 'scm', 'version',
-                        'matching', 'uri']
+        # table design
+        selected_headers = ['localname', 'scm', 'uri']
+    else:
+
+        headers = {
+            'uri': "URI  (Spec) [http(s)://...]",
+            'scm': "SCM ",
+            'localname': "Localname",
+            'version': "Version-Spec",
+            'matching': "UID  (Spec)",
+            'status': "S"}
+
+        # table design
+        selected_headers = ['localname', 'status', 'scm', 'version',
+                            'matching', 'uri']
 
     outputs = get_info_table_elements(
         basepath=basepath,
-        entries=entries)
+        entries=[e for e in entries if 'properties' in e and ('unmanaged' in e['properties']) == unmanaged],
+        unmanaged=unmanaged)
 
     # adjust column width
     column_length = {}

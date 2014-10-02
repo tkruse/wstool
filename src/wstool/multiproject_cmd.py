@@ -453,7 +453,7 @@ def cmd_info(config, localnames=None, untracked=False, unmanaged=True):
             self.untracked = untracked
             vcsc = get_vcs_client(self.scm_type, os.path.join(self.path, self.localname))
             self.element = AVCSConfigElement(scm_type, os.path.join(self.path, self.localname), localname, vcsc.get_url())
-            self.element.properties = {'unmanaged':True}
+            self.element.properties = ['unmanaged']
 
     path = config.get_base_path()
     # call SCM info in separate threads

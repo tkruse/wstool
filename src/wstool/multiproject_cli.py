@@ -1081,4 +1081,13 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
         if table is not None and table != '':
            print("\n%s" % table)
 
+        if options.unmanaged:
+            table2 = get_info_table(config.get_base_path(),
+                                   outputs,
+                                   options.data_only,
+                                   reverse=reverse,
+                                   unmanaged=True)
+            if table2 is not None and table2 != '':
+                print("\nAlso detected these repositories in the workspace, add using '%s set':\n%s" % (self.progname, table2))
+
         return 0
