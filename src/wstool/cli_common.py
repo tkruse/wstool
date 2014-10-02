@@ -270,9 +270,15 @@ def get_info_table(basepath, entries, data_only=False, reverse=False, unmanaged=
         selected_headers = ['localname', 'status', 'scm', 'version',
                             'matching', 'uri']
 
+    # Remove unmanaged if the unmanaged flag is false
+    entries = [
+        e for e in entries 
+        if unmanaged == 
+        (('properties' in e) and ('unmanaged' in e['properties']))]
+
     outputs = get_info_table_elements(
         basepath=basepath,
-        entries=[e for e in entries if 'properties' in e and ('unmanaged' in e['properties']) == unmanaged],
+        entries=entries,
         unmanaged=unmanaged)
 
     # adjust column width
