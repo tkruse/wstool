@@ -1088,6 +1088,6 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
                                    reverse=reverse,
                                    unmanaged=True)
             if table2 is not None and table2 != '':
-                print("\nAlso detected these repositories in the workspace, add using '%s set':\n%s" % (self.progname, table2))
+                print("\nAlso detected these repositories in the workspace, add using '%s set':\n\n%s" % (self.progname, table2))
 
         return 0
