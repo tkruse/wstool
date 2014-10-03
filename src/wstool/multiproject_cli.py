@@ -979,7 +979,6 @@ The command removes entries from your configuration file, it does not affect you
             description=__MULTIPRO_CMD_DICT__["info"] + """
 
 The Status (S) column shows
- !  for not listed in the config file
  x  for missing
  L  for uncommited (local) changes
  V  for difference in version and/or remote URI
@@ -1063,8 +1062,7 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
         # this call takes long, as it invokes scms.
         outputs = multiproject_cmd.cmd_info(config,
                                             localnames=args,
-                                            untracked=options.untracked,
-                                            unmanaged=options.unmanaged)
+                                            untracked=options.untracked)
         if args and len(args) == 1:
             # if only one element selected, print just one line
             print(get_info_list(config.get_base_path(),
@@ -1082,8 +1080,9 @@ $ %(prog)s info --only=path,cur_uri,cur_revision robot_model geometry
            print("\n%s" % table)
 
         if options.unmanaged:
+            outputs2 = multiproject_cmd.cmd_find_unmanaged_repos(config)
             table2 = get_info_table(config.get_base_path(),
-                                   outputs,
+                                   outputs2,
                                    options.data_only,
                                    reverse=reverse,
                                    unmanaged=True)

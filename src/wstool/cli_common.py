@@ -143,7 +143,7 @@ def _get_status_flags(basepath, elt_dict):
     return mflag
 
 
-def get_info_table_elements(basepath, entries, unmanaged=False):
+def get_info_table_elements(basepath, entries):
     """returns a list of dict with refined information from entries"""
 
     outputs = []
@@ -158,7 +158,7 @@ def get_info_table_elements(basepath, entries, unmanaged=False):
             line['curr_version'] = None
         if not 'version' in line:
             line['version'] = None
-        output_dict = {'scm': '--' + line['scm'] if unmanaged else line['scm'],
+        output_dict = {'scm': line['scm'],
                        'uri': line['uri'],
                        'curr_uri': None,
                        'version': line['version'],
@@ -270,16 +270,9 @@ def get_info_table(basepath, entries, data_only=False, reverse=False, unmanaged=
         selected_headers = ['localname', 'status', 'scm', 'version',
                             'matching', 'uri']
 
-    # Remove unmanaged if the unmanaged flag is false
-    entries = [
-        e for e in entries 
-        if unmanaged == 
-        (('properties' in e) and ('unmanaged' in e['properties']))]
-
     outputs = get_info_table_elements(
         basepath=basepath,
-        entries=entries,
-        unmanaged=unmanaged)
+        entries=entries)
 
     # adjust column width
     column_length = {}
